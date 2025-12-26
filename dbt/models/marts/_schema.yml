@@ -1,0 +1,256 @@
+# Gold Layer Model Schema
+# Marts - Dimensions, Facts, and Analytics
+
+version: 2
+
+models:
+  # ===================
+  # DIMENSION TABLES
+  # ===================
+  
+  - name: dim_customers
+    description: |
+      Customer dimension table with enriched metrics.
+      Contains customer demographics, order history metrics, and segmentation.
+    
+    columns:
+      - name: customer_key
+        description: "Surrogate key for customer dimension"
+        tests:
+          - unique
+          - not_null
+      
+      - name: customer_id
+        description: "Business key"
+        tests:
+          - unique
+          - not_null
+      
+      - name: customer_segment
+        description: "Calculated customer segment"
+        tests:
+          - accepted_values:
+              values: ['Enterprise', 'High Value', 'Frequent', 'Standard']
+      
+      - name: activity_status
+        description: "Customer activity status"
+        tests:
+          - accepted_values:
+              values: ['Active', 'At Risk', 'Churned', 'New']
+      
+      - name: lifetime_revenue
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              severity: warn
+  
+  - name: dim_devices
+    description: |
+      Device dimension table with operational metrics.
+      Includes device info, location, customer, and health metrics.
+    
+    columns:
+      - name: device_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: device_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: health_score
+        description: "Device health score (0-100)"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      
+      - name: device_status
+        tests:
+          - accepted_values:
+              values: ['active', 'inactive', 'maintenance', 'decommissioned']
+              severity: warn
+  
+  - name: dim_locations
+    description: "Location dimension with device counts"
+    
+    columns:
+      - name: location_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: location_id
+        tests:
+          - unique
+          - not_null
+  
+  - name: dim_date
+    description: "Standard date dimension for analytics"
+    
+    columns:
+      - name: date_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: date_actual
+        tests:
+          - unique
+          - not_null
+
+  # ===================
+  # FACT TABLES
+  # ===================
+  
+  - name: fct_iot_events
+    description: |
+      Fact table for IoT sensor readings.
+      Grain: One row per sensor event.
+      Partitioned by event_date for query performance.
+    
+    columns:
+      - name: event_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: event_id
+        tests:
+          - not_null
+      
+      - name: device_key
+        description: "Foreign key to dim_devices"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_devices')
+              field: device_key
+              severity: warn
+      
+      - name: location_key
+        tests:
+          - relationships:
+              to: ref('dim_locations')
+              field: location_key
+              severity: warn
+      
+      - name: event_timestamp
+        tests:
+          - not_null
+  
+  - name: fct_orders
+    description: |
+      Fact table for customer orders.
+      Grain: One row per order.
+    
+    columns:
+      - name: order_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: order_id
+        tests:
+          - not_null
+      
+      - name: customer_key
+        tests:
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_key
+              severity: warn
+      
+      - name: quantity
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              severity: warn
+      
+      - name: total_amount
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              severity: warn
+  
+  - name: fct_alerts
+    description: |
+      Fact table for device alerts.
+      Grain: One row per alert.
+    
+    columns:
+      - name: alert_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: alert_id
+        tests:
+          - not_null
+      
+      - name: device_key
+        tests:
+          - relationships:
+              to: ref('dim_devices')
+              field: device_key
+              severity: warn
+      
+      - name: severity
+        tests:
+          - accepted_values:
+              values: ['low', 'medium', 'high', 'critical']
+              severity: warn
+      
+      - name: severity_weight
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 4
+
+  # ===================
+  # ANALYTICS TABLES
+  # ===================
+  
+  - name: agg_daily_device_metrics
+    description: |
+      Aggregated daily metrics per device and sensor type.
+      Used for dashboards and trend analysis.
+    
+    columns:
+      - name: metric_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: data_quality_pct
+        description: "Percentage of valid readings"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+      
+      - name: health_status
+        tests:
+          - accepted_values:
+              values: ['Critical', 'Warning', 'Data Quality Issue', 'Low Battery', 'Healthy']
+  
+  - name: agg_customer_summary
+    description: |
+      Executive summary of customer metrics.
+      One row per customer with aggregated KPIs.
+    
+    columns:
+      - name: customer_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: customer_health_score
+        description: "Calculated customer health (0-100)"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+              severity: warn

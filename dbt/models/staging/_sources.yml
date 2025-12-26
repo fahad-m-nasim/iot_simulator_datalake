@@ -1,0 +1,236 @@
+# Source Definitions - Bronze Layer
+# 
+# These sources reference the Bronze tables created by DLT
+# in the ingestion pipeline.
+
+version: 2
+
+sources:
+  - name: bronze
+    description: "Bronze layer tables ingested via Delta Live Tables from S3"
+    database: "{{ var('catalog') }}"
+    schema: "bronze_{{ var('env_prefix') }}"
+    
+    # Freshness checks
+    freshness:
+      warn_after:
+        count: "{{ var('freshness_warn_hours', 2) }}"
+        period: hour
+      error_after:
+        count: "{{ var('freshness_error_hours', 6) }}"
+        period: hour
+    
+    # Default loaded_at field for freshness
+    loaded_at_field: _ingested_at
+    
+    tables:
+      # IoT Events
+      - name: iot_events
+        description: "Raw IoT sensor events from devices"
+        identifier: iot_events
+        columns:
+          - name: event_id
+            description: "Unique identifier for each event"
+            tests:
+              - not_null
+              - unique
+          - name: device_id
+            description: "Device that generated the event"
+            tests:
+              - not_null
+          - name: timestamp
+            description: "Event timestamp (ISO format string)"
+          - name: event_timestamp
+            description: "Parsed event timestamp"
+          - name: sensor_type
+            description: "Type of sensor (temperature, humidity, pressure, motion)"
+            tests:
+              - accepted_values:
+                  values: ['temperature', 'humidity', 'pressure', 'motion']
+          - name: value
+            description: "Sensor reading value"
+          - name: unit
+            description: "Unit of measurement"
+          - name: location_id
+            description: "Location where device is installed"
+          - name: quality_flag
+            description: "Data quality indicator"
+            tests:
+              - accepted_values:
+                  values: ['good', 'suspect', 'anomaly', 'missing']
+          - name: firmware_version
+            description: "Device firmware version"
+          - name: battery_level
+            description: "Device battery percentage (0-100)"
+          - name: _ingested_at
+            description: "Timestamp when record was ingested"
+          - name: _source_file
+            description: "Source file path in S3"
+      
+      # CDC Tables - Customers
+      - name: cdc_customers
+        description: "CDC events for customers table"
+        identifier: cdc_customers
+        columns:
+          - name: customer_id
+            description: "Primary key for customer"
+            tests:
+              - not_null
+          - name: company_name
+            description: "Customer company name"
+          - name: contact_name
+            description: "Primary contact name"
+          - name: email
+            description: "Contact email"
+          - name: phone
+            description: "Contact phone"
+          - name: industry
+            description: "Customer industry"
+          - name: subscription_tier
+            description: "Subscription level"
+          - name: __op
+            description: "CDC operation type (r=read, c=create, u=update, d=delete)"
+          - name: __ts_ms
+            description: "CDC event timestamp (milliseconds)"
+          - name: __deleted
+            description: "Soft delete flag"
+      
+      # CDC Tables - Products
+      - name: cdc_products
+        description: "CDC events for products table"
+        identifier: cdc_products
+        columns:
+          - name: product_id
+            description: "Primary key for product"
+            tests:
+              - not_null
+          - name: product_name
+            description: "Product name"
+          - name: category
+            description: "Product category"
+          - name: unit_price
+            description: "Price per unit"
+          - name: __op
+            description: "CDC operation type"
+          - name: __deleted
+            description: "Soft delete flag"
+      
+      # CDC Tables - Orders
+      - name: cdc_orders
+        description: "CDC events for orders table"
+        identifier: cdc_orders
+        columns:
+          - name: order_id
+            description: "Primary key for order"
+            tests:
+              - not_null
+          - name: customer_id
+            description: "Foreign key to customer"
+          - name: product_id
+            description: "Foreign key to product"
+          - name: device_id
+            description: "Device that triggered the order"
+          - name: quantity
+            description: "Order quantity"
+          - name: total_amount
+            description: "Total order amount"
+          - name: order_status
+            description: "Order status"
+          - name: __op
+            description: "CDC operation type"
+          - name: __deleted
+            description: "Soft delete flag"
+      
+      # CDC Tables - Dimensions
+      - name: cdc_devices
+        description: "CDC events for device dimension"
+        identifier: cdc_devices
+        columns:
+          - name: device_id
+            description: "Primary key for device"
+            tests:
+              - not_null
+          - name: device_name
+            description: "Human-readable device name"
+          - name: device_type
+            description: "Type of device/sensor"
+          - name: manufacturer
+            description: "Device manufacturer"
+          - name: location_id
+            description: "Installation location"
+          - name: status
+            description: "Device operational status"
+          - name: __op
+            description: "CDC operation type"
+          - name: __deleted
+            description: "Soft delete flag"
+      
+      - name: cdc_locations
+        description: "CDC events for location dimension"
+        identifier: cdc_locations
+        columns:
+          - name: location_id
+            description: "Primary key for location"
+            tests:
+              - not_null
+          - name: location_name
+            description: "Location name"
+          - name: building
+            description: "Building name/number"
+          - name: floor
+            description: "Floor number"
+          - name: zone
+            description: "Zone within building"
+          - name: latitude
+            description: "Geographic latitude"
+          - name: longitude
+            description: "Geographic longitude"
+          - name: __op
+            description: "CDC operation type"
+          - name: __deleted
+            description: "Soft delete flag"
+      
+      - name: cdc_alert_thresholds
+        description: "CDC events for alert threshold dimension"
+        identifier: cdc_alert_thresholds
+        columns:
+          - name: threshold_id
+            description: "Primary key for threshold"
+          - name: sensor_type
+            description: "Type of sensor"
+          - name: min_value
+            description: "Minimum acceptable value"
+          - name: max_value
+            description: "Maximum acceptable value"
+          - name: severity
+            description: "Alert severity level"
+          - name: __op
+            description: "CDC operation type"
+          - name: __deleted
+            description: "Soft delete flag"
+      
+      # CDC Tables - Alerts
+      - name: cdc_alerts
+        description: "CDC events for alerts fact table"
+        identifier: cdc_alerts
+        columns:
+          - name: alert_id
+            description: "Primary key for alert"
+            tests:
+              - not_null
+          - name: device_id
+            description: "Device that triggered the alert"
+          - name: threshold_id
+            description: "Threshold that was violated"
+          - name: alert_type
+            description: "Type of alert"
+          - name: severity
+            description: "Alert severity"
+          - name: message
+            description: "Alert message"
+          - name: status
+            description: "Alert status"
+          - name: __op
+            description: "CDC operation type"
+          - name: __deleted
+            description: "Soft delete flag"

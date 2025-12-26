@@ -1,0 +1,264 @@
+# Staging Models Schema Documentation
+# Silver Layer - Cleaned and standardized data
+
+version: 2
+
+models:
+  # IoT Events
+  - name: stg_iot_events
+    description: |
+      Cleaned and standardized IoT sensor events.
+      Source: Bronze iot_events_validated (DLT with quality checks)
+      
+      Transformations applied:
+      - Timestamp parsing and standardization
+      - Surrogate key generation
+      - Battery status categorization
+      - Quality flag validation
+    
+    columns:
+      - name: _surrogate_key
+        description: "Unique surrogate key for merge operations"
+        tests:
+          - unique
+          - not_null
+      
+      - name: event_id
+        description: "Original event identifier"
+        tests:
+          - unique
+          - not_null
+      
+      - name: device_id
+        description: "Device that generated the event"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_devices')
+              field: device_id
+              severity: warn
+      
+      - name: location_id
+        description: "Location of the device"
+        tests:
+          - relationships:
+              to: ref('stg_locations')
+              field: location_id
+              severity: warn
+      
+      - name: event_timestamp
+        description: "Parsed event timestamp"
+        tests:
+          - not_null
+      
+      - name: event_date
+        description: "Event date (partition column)"
+        tests:
+          - not_null
+      
+      - name: sensor_type
+        description: "Type of sensor reading"
+        tests:
+          - accepted_values:
+              values: ['temperature', 'humidity', 'pressure', 'motion']
+      
+      - name: sensor_value
+        description: "Numeric sensor reading value"
+      
+      - name: sensor_unit
+        description: "Unit of measurement"
+      
+      - name: quality_flag
+        description: "Data quality indicator"
+        tests:
+          - accepted_values:
+              values: ['good', 'suspect', 'anomaly', 'missing']
+      
+      - name: is_valid_reading
+        description: "Boolean flag for good quality readings"
+      
+      - name: battery_level
+        description: "Device battery percentage"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100
+              severity: warn
+      
+      - name: battery_status
+        description: "Categorized battery status"
+        tests:
+          - accepted_values:
+              values: ['critical', 'low', 'medium', 'good']
+
+  # Customers
+  - name: stg_customers
+    description: |
+      Current state of customers from CDC events.
+      Applies SCD Type 1 logic to get latest record per customer.
+    
+    columns:
+      - name: _surrogate_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: customer_id
+        description: "Business key for customer"
+        tests:
+          - unique
+          - not_null
+      
+      - name: company_name
+        description: "Customer company name"
+      
+      - name: subscription_tier
+        description: "Customer subscription level"
+        tests:
+          - accepted_values:
+              values: ['basic', 'premium', 'enterprise']
+              severity: warn
+      
+      - name: _is_deleted
+        description: "Soft delete flag from CDC"
+
+  # Products
+  - name: stg_products
+    description: "Current state of products from CDC events"
+    
+    columns:
+      - name: _surrogate_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: unit_price
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              severity: warn
+
+  # Orders
+  - name: stg_orders
+    description: "Current state of orders from CDC events"
+    
+    columns:
+      - name: _surrogate_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+              severity: warn
+      
+      - name: product_id
+        tests:
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+              severity: warn
+      
+      - name: quantity
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              severity: warn
+      
+      - name: total_amount
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              severity: warn
+
+  # Devices
+  - name: stg_devices
+    description: "Current state of devices from CDC events"
+    
+    columns:
+      - name: _surrogate_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: device_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['active', 'inactive', 'maintenance', 'decommissioned']
+              severity: warn
+
+  # Locations
+  - name: stg_locations
+    description: "Current state of locations from CDC events"
+    
+    columns:
+      - name: _surrogate_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: location_id
+        tests:
+          - unique
+          - not_null
+
+  # Alerts
+  - name: stg_alerts
+    description: "Current state of alerts from CDC events"
+    
+    columns:
+      - name: _surrogate_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: alert_id
+        tests:
+          - unique
+          - not_null
+      
+      - name: severity
+        tests:
+          - accepted_values:
+              values: ['low', 'medium', 'high', 'critical']
+              severity: warn
+      
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['open', 'acknowledged', 'resolved', 'escalated']
+              severity: warn
+
+  # Alert Thresholds
+  - name: stg_alert_thresholds
+    description: "Current state of alert thresholds from CDC events"
+    
+    columns:
+      - name: _surrogate_key
+        tests:
+          - unique
+          - not_null
+      
+      - name: threshold_id
+        tests:
+          - unique
+          - not_null

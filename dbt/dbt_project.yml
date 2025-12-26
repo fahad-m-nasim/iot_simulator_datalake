@@ -1,0 +1,131 @@
+# dbt Project: IoT Streaming Pipeline
+# 
+# This dbt project transforms data from Bronze to Silver to Gold layers
+# following the Medallion Architecture pattern.
+#
+# Best Practices Applied:
+# - Modular project structure
+# - Documentation for all models
+# - Tests (schema, data, custom)
+# - Incremental models where appropriate
+# - Materialization strategies optimized for cost
+
+name: 'iot_streaming_pipeline'
+version: '1.0.0'
+config-version: 2
+
+# Profile configuration (Databricks)
+profile: 'databricks'
+
+# Path configurations
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+# Target path for compiled SQL
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+# Require dbt version
+require-dbt-version: [">=1.7.0", "<2.0.0"]
+
+# Variables for environment configuration
+vars:
+  # Environment prefix (dev, staging, prod)
+  env_prefix: "{{ env_var('DBT_ENV_PREFIX', 'dev') }}"
+  
+  # Catalog name
+  catalog: "{{ env_var('DBT_CATALOG', 'iot_streaming_dev') }}"
+  
+  # Default date for testing
+  default_start_date: '2024-01-01'
+  
+  # Data freshness thresholds
+  freshness_warn_hours: 2
+  freshness_error_hours: 6
+
+# Model configurations by folder
+models:
+  iot_streaming_pipeline:
+    # Bronze layer - Sources (read-only, no models)
+    +docs:
+      show: true
+    
+    # Staging layer - Initial transformations from Bronze
+    staging:
+      +schema: "silver_{{ var('env_prefix') }}"
+      +materialized: incremental
+      +incremental_strategy: merge
+      +unique_key: _surrogate_key
+      +on_schema_change: append_new_columns
+      +tags: ['staging', 'silver']
+      +persist_docs:
+        relation: true
+        columns: true
+    
+    # Intermediate layer - Business logic transformations
+    intermediate:
+      +schema: "silver_{{ var('env_prefix') }}"
+      +materialized: incremental
+      +incremental_strategy: merge
+      +tags: ['intermediate', 'silver']
+      +persist_docs:
+        relation: true
+        columns: true
+    
+    # Marts layer - Final business-ready tables
+    marts:
+      +schema: "gold_{{ var('env_prefix') }}"
+      +materialized: table
+      +tags: ['marts', 'gold']
+      +persist_docs:
+        relation: true
+        columns: true
+      
+      # Dimension tables
+      dimensions:
+        +materialized: table
+        +tags: ['dimension']
+      
+      # Fact tables
+      facts:
+        +materialized: incremental
+        +incremental_strategy: merge
+        +tags: ['fact']
+      
+      # Aggregation/Analytics tables
+      analytics:
+        +materialized: table
+        +tags: ['analytics']
+
+# Seed configurations
+seeds:
+  iot_streaming_pipeline:
+    +schema: "seeds_{{ var('env_prefix') }}"
+
+# Snapshot configurations (for SCD Type 2)
+snapshots:
+  iot_streaming_pipeline:
+    +schema: "snapshots_{{ var('env_prefix') }}"
+
+# Test configurations
+tests:
+  +severity: warn  # Default to warn, override for critical tests
+  +store_failures: true  # Store test failures for debugging
+  +schema: "test_results_{{ var('env_prefix') }}"
+
+# Dispatch configuration for custom macros
+dispatch:
+  - macro_namespace: dbt_utils
+    search_order: ['iot_streaming_pipeline', 'dbt_utils']
+
+# Query comment for audit trail
+query-comment:
+  comment: "dbt {{ model.name }} | {{ invocation_id }} | {{ run_started_at }}"
+  append: true
