@@ -5,6 +5,9 @@ profile: iot_simulator_datalake
 
 models:
   iot_simulator_datalake:
-    staging:
-      iot_events:
-        +materialized: view
+    bronze:
+      +materialized: view
+    silver:
+      +materialized: view
+    gold:
+      +materialized: table

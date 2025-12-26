@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: dim_locations
+    config:
+      materialized: table
+  - name: fact_iot_events
+    config:
+      materialized: table
+  - name: dim_date
+    config:
+      materialized: table

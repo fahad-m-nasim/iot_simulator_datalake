@@ -1,0 +1,6 @@
+version: 2
+
+models:
+  - name: brnz_ingest_iot_events
+    config:
+      materialized: table

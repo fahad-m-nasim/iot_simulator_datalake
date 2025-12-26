@@ -1,0 +1,6 @@
+version: 2
+
+models:
+  - name: slvr_iot_events
+    config:
+      materialized: view
