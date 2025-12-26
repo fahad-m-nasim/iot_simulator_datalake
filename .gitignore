@@ -3,3 +3,11 @@
 .env
 .user.yml
 target/
+.databricks/
+build/
+dist/
+__pycache__/
+*.egg-info
+.venv/
+scratch/**
+!scratch/README.md

@@ -1,0 +1,25 @@
+# databricks.yml
+# This is the configuration for the Databricks Asset Bundle {{.project_name}}.
+
+bundle:
+  name: iot_simulator_datalake
+
+include:
+  - resources/*.yml
+
+variables:
+  project_name:
+    description: Name of the project
+    default: iot_simulator_datalake
+
+
+
+targets:
+  # The deployment targets. See https://docs.databricks.com/en/dev-tools/bundles/deployment-modes.html
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-6ee8b0d3-4446.cloud.databricks.com
+    variables:
+      project_name: iot_simulator_datalake

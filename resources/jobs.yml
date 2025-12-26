@@ -1,0 +1,22 @@
+# {{.project_name}}_job.yml
+# The main job for {{.project_name}}
+
+resources:
+  jobs:
+    job_iot_simulator_datalake:
+      name: job_iot_simulator_datalake
+      tasks:
+        - task_key: data-pipeline-dbt-task
+          job_cluster_key: job_cluster
+          dbt_task:
+            commands:
+              - 'dbt run -t dev'
+            project_directory: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+          libraries:
+            - pypi:
+                package: 'dbt-databricks>=1.0.0,<2.0.0'
+      job_clusters:
+        - job_cluster_key: job_cluster
+          new_cluster:
+              node_type_id: md-fleet.xlarge
+              spark_version: 17.3.x-scala2.13
