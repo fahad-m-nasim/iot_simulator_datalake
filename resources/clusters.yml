@@ -1,9 +1,0 @@
-# NO INTERACTIVE CLUSTERS - All compute uses JOB CLUSTERS only
-# This file is intentionally minimal to avoid creating interactive clusters
-#
-# Cost Optimization:
-# - DLT pipelines create their own job clusters (configured in pipelines.yml)
-# - dbt jobs use job_cluster_key (configured in jobs.yml)
-# - No always-on interactive clusters = significant cost savings
-#
-# Job cluster config is defined inline in jobs.yml

@@ -1,0 +1,10 @@
+# dbt_project.yml
+name: iot_simulator_datalake
+version: 1.0.0
+profile: iot_simulator_datalake
+
+models:
+  iot_simulator_datalake:
+    staging:
+      iot_events:
+        +materialized: view
