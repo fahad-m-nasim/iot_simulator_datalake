@@ -1,33 +1,37 @@
-# Databricks IoT Streaming Pipeline
+# Databricks IoT Lakehouse Pipeline
 
-This directory contains the Databricks Asset Bundle (DAB) for deploying and managing
-the IoT streaming pipeline. It includes Delta Live Tables (DLT) for ingestion and
-dbt for transformations following the medallion architecture.
+Modern data lakehouse implementation using **Lakeflow Declarative Pipelines** (SQL-only)
+following Databricks best practices. All transformations from Bronze to Gold are implemented
+in pure SQL using Streaming Tables and Materialized Views.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              IoT Streaming Pipeline                              │
+│                    IoT Lakehouse - Lakeflow Declarative Pipelines               │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
-│  ┌─────────────┐    ┌───────────────┐    ┌───────────────┐    ┌──────────────┐ │
-│  │     S3      │───▶│  Auto Loader  │───▶│    Bronze     │───▶│    Silver    │ │
-│  │  (Raw Data) │    │    (DLT)      │    │  (DLT Tables) │    │ (dbt Models) │ │
-│  └─────────────┘    └───────────────┘    └───────────────┘    └──────┬───────┘ │
-│                                                                       │         │
-│        IoT Events                       Streaming Tables              │         │
-│        CDC Data                         Quality Checks                ▼         │
-│                                                                 ┌──────────────┐│
-│                                                                 │     Gold     ││
-│                                                                 │ (dbt Marts)  ││
-│                                                                 └──────────────┘│
+│  ┌─────────────┐    ┌───────────────────┐    ┌───────────────────────────────┐ │
+│  │     S3      │───▶│   STREAMING       │───▶│      MATERIALIZED VIEWS       │ │
+│  │ (Raw Data)  │    │   TABLES          │    │                               │ │
+│  │             │    │   (Bronze)        │    │  Silver          Gold         │ │
+│  └─────────────┘    │                   │    │  ┌─────────┐    ┌──────────┐  │ │
+│                     │  • iot_events     │    │  │ stg_*   │───▶│ dim_*    │  │ │
+│  IoT Events ───────▶│  • cdc_customers  │───▶│  │ models  │    │ fct_*    │  │ │
+│  CDC Data ─────────▶│  • cdc_products   │    │  └─────────┘    │ agg_*    │  │ │
+│                     │  • cdc_orders     │    │                 └──────────┘  │ │
+│                     │  • cdc_devices    │    │                               │ │
+│                     │  • cdc_locations  │    │  All SQL-based transformations│ │
+│                     │  • cdc_alerts     │    │  with data quality expectations│ │
+│                     │  • cdc_thresholds │    │                               │ │
+│                     └───────────────────┘    └───────────────────────────────┘ │
 │                                                                                  │
-│  Components:                                                                     │
-│  • DLT Pipeline: Bronze ingestion with Auto Loader                              │
-│  • dbt Project: Silver/Gold transformations                                     │
-│  • Jobs: Scheduled orchestration                                                │
-│  • Cluster: Shared low-cost compute                                             │
+│  Technology Stack:                                                               │
+│  • Lakeflow Spark Declarative Pipelines (formerly Delta Live Tables)            │
+│  • Streaming Tables with Auto Loader (Bronze)                                   │
+│  • Materialized Views with CDC processing (Silver/Gold)                         │
+│  • Unity Catalog for governance                                                 │
+│  • Pure SQL - No Python notebooks required                                      │
 │                                                                                  │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -35,36 +39,70 @@ dbt for transformations following the medallion architecture.
 ## Directory Structure
 
 ```
-databricks/
+iot_simulator_datalake/
 ├── databricks.yml              # Main DAB configuration
 ├── resources/
-│   ├── clusters.yml            # Cluster definitions (shared compute)
-│   ├── pipelines.yml           # DLT pipeline for Bronze ingestion
+│   ├── clusters.yml            # Cluster definitions
+│   ├── pipelines.yml           # Lakeflow pipeline configuration
 │   └── jobs.yml                # Job definitions
-├── notebooks/
-│   ├── bronze/
-│   │   ├── ingest_iot_events.py    # DLT: IoT event ingestion
-│   │   └── ingest_cdc_tables.py    # DLT: CDC table ingestion
+├── pipelines/                  # SQL Declarative Pipelines
+│   ├── bronze/                 # Streaming Tables (Ingestion)
+│   │   ├── ingest_iot_events.sql
+│   │   ├── ingest_cdc_customers.sql
+│   │   ├── ingest_cdc_products.sql
+│   │   ├── ingest_cdc_orders.sql
+│   │   ├── ingest_cdc_devices.sql
+│   │   ├── ingest_cdc_locations.sql
+│   │   ├── ingest_cdc_alerts.sql
+│   │   └── ingest_cdc_alert_thresholds.sql
+│   ├── silver/                 # Materialized Views (Staging)
+│   │   ├── stg_iot_events.sql
+│   │   ├── stg_customers.sql
+│   │   ├── stg_products.sql
+│   │   ├── stg_orders.sql
+│   │   ├── stg_devices.sql
+│   │   ├── stg_locations.sql
+│   │   ├── stg_alerts.sql
+│   │   └── stg_alert_thresholds.sql
+│   └── gold/                   # Materialized Views (Marts)
+│       ├── dimensions/
+│       │   ├── dim_customers.sql
+│       │   ├── dim_devices.sql
+│       │   ├── dim_locations.sql
+│       │   └── dim_date.sql
+│       ├── facts/
+│       │   ├── fct_iot_events.sql
+│       │   ├── fct_alerts.sql
+│       │   └── fct_orders.sql
+│       └── analytics/
+│           ├── agg_daily_device_metrics.sql
+│           ├── agg_customer_summary.sql
+│           └── agg_hourly_device_metrics.sql
+├── notebooks/                  # Support notebooks (jobs)
 │   └── jobs/
-│       ├── run_dbt_deps.py         # Install dbt packages
-│       ├── run_dbt_build.py        # Run dbt models
-│       ├── run_dbt_test.py         # Run dbt tests
-│       └── run_data_quality.py     # Data quality checks
-└── dbt/
-    ├── dbt_project.yml         # dbt project config
-    ├── profiles.yml            # Databricks connection
-    ├── packages.yml            # dbt packages
-    ├── models/
-    │   ├── staging/            # Silver layer (CDC processing)
-    │   └── marts/              # Gold layer
-    │       ├── dimensions/     # Dimension tables
-    │       ├── facts/          # Fact tables
-    │       └── analytics/      # Aggregation tables
-    └── tests/
-        ├── generic/            # Reusable test macros
-        ├── data_quality/       # Data quality tests
-        └── integration/        # Integration tests
+│       └── run_data_quality.py
+└── dbt/                        # Legacy dbt project (deprecated)
+    └── ...
 ```
+
+## Key Features
+
+### Pure SQL Architecture
+- **No Python required** for transformations
+- All business logic in SQL Declarative Pipelines
+- Unified lineage from ingestion to analytics
+
+### Streaming Tables (Bronze)
+- Auto Loader for file ingestion (`read_files()`)
+- Schema evolution support
+- Data quality expectations (CONSTRAINT ... EXPECT)
+- Partitioned by ingestion date
+
+### Materialized Views (Silver/Gold)
+- CDC processing with SCD Type 1
+- Automatic incremental refresh
+- Built-in optimization (VACUUM, OPTIMIZE)
+- Declarative data quality checks
 
 ## Prerequisites
 
@@ -95,7 +133,6 @@ EOF
 ### 2. Validate the Bundle
 
 ```bash
-cd databricks
 databricks bundle validate
 ```
 
@@ -112,91 +149,104 @@ databricks bundle summary -t dev
 ### 4. Run the Pipeline
 
 ```bash
-# Trigger DLT ingestion
-databricks bundle run iot_ingestion_job -t dev
-
-# Run dbt transformations
-databricks bundle run dbt_transformation_job -t dev
-
-# Run data quality checks
-databricks bundle run data_quality_job -t dev
+# Run the lakehouse pipeline (Bronze -> Silver -> Gold)
+databricks bundle run iot_lakehouse_pipeline -t dev
 ```
 
-## Environment Configuration
+## Pipeline Layers
 
-| Target | Catalog | Schema Prefix | Compute | Schedule |
-|--------|---------|---------------|---------|----------|
-| dev | iot_streaming_dev | dev | i3.xlarge (spot) | Hourly |
-| staging | iot_streaming_staging | staging | i3.xlarge (spot) | 30 min |
-| prod | iot_streaming_prod | prod | i3.xlarge (spot) | 15 min |
+### Bronze Layer (Streaming Tables)
 
+| Table | Source | Description |
+|-------|--------|-------------|
+| `iot_events` | JSON files | IoT sensor events with Auto Loader |
+| `cdc_customers` | CDC JSON | Customer CDC events (Debezium format) |
+| `cdc_products` | CDC JSON | Product CDC events |
+| `cdc_orders` | CDC JSON | Order CDC events |
+| `cdc_devices` | CDC JSON | Device CDC events |
+| `cdc_locations` | CDC JSON | Location CDC events |
+| `cdc_alerts` | CDC JSON | Alert CDC events |
+| `cdc_alert_thresholds` | CDC JSON | Threshold CDC events |
+
+### Silver Layer (Materialized Views - Staging)
+
+| Model | Description |
+|-------|-------------|
+| `stg_iot_events` | Cleaned IoT events with quality flags |
+| `stg_customers` | Customer current state (SCD Type 1) |
+| `stg_products` | Product catalog |
+| `stg_orders` | Order transactions |
+| `stg_devices` | Device inventory |
+| `stg_locations` | Location master |
+| `stg_alerts` | Alert events |
+| `stg_alert_thresholds` | Threshold configurations |
+
+### Gold Layer (Materialized Views - Marts)
+
+**Dimensions:**
+| Model | Description |
+|-------|-------------|
+| `dim_customers` | Customer dimension with metrics |
+| `dim_devices` | Device dimension with health scores |
+| `dim_locations` | Location dimension |
+| `dim_date` | Standard date dimension |
+
+**Facts:**
+| Model | Description |
+|-------|-------------|
+| `fct_iot_events` | Sensor reading facts with dimension keys |
+| `fct_orders` | Order transaction facts |
+| `fct_alerts` | Alert facts with severity weights |
+
+**Analytics:**
+| Model | Description |
+|-------|-------------|
+| `agg_daily_device_metrics` | Daily device aggregations |
+| `agg_hourly_device_metrics` | Hourly device metrics |
+| `agg_customer_summary` | Customer health scorecard |
 ## Cost Optimization
 
 This pipeline is designed for minimal cost:
 
-1. **Shared Cluster**: Single cluster used across all jobs
+1. **Single Pipeline**: All layers in one Lakeflow pipeline
 2. **Spot Instances**: 100% spot with on-demand fallback
-3. **Auto-termination**: 10-20 minutes based on environment
-4. **Triggered DLT**: Not continuous, runs on schedule
-5. **No Serverless**: All compute is classic clusters
-6. **Small Instance Type**: i3.xlarge for cost-effective Spark
+3. **Triggered Mode**: Not continuous, runs on schedule
+4. **Single Node**: Development uses single node cluster
+5. **No Photon**: Disabled for cost savings (enable in prod)
 
 **Estimated Monthly Cost**: $15-25 depending on usage
 
-## dbt Models
+## Why Lakeflow Declarative Pipelines?
 
-### Staging (Silver Layer)
-- `stg_iot_events`: Cleaned IoT sensor events
-- `stg_customers`: Customer current state (SCD Type 1)
-- `stg_products`: Product catalog
-- `stg_orders`: Order transactions
-- `stg_devices`: Device inventory
-- `stg_locations`: Location master
-- `stg_alerts`: Alert events
-- `stg_alert_thresholds`: Threshold configurations
+| Feature | Lakeflow (New) | dbt + DLT (Old) |
+|---------|----------------|-----------------|
+| **Language** | Pure SQL | SQL + Python |
+| **Ingestion** | Built-in (Streaming Tables) | Separate Python notebooks |
+| **Transformations** | Materialized Views | dbt models |
+| **Lineage** | Unified | Split between tools |
+| **Maintenance** | Automatic (predictive optimization) | Manual dbt run |
+| **Data Quality** | EXPECT constraints | dbt tests |
+| **Complexity** | Single framework | Multiple tools |
 
-### Marts (Gold Layer)
+## Data Quality
 
-**Dimensions:**
-- `dim_customers`: Customer dimension with metrics
-- `dim_devices`: Device dimension with health scores
-- `dim_locations`: Location dimension
-- `dim_date`: Standard date dimension
+Data quality is enforced at multiple levels:
 
-**Facts:**
-- `fct_iot_events`: Sensor reading facts
-- `fct_orders`: Order transaction facts
-- `fct_alerts`: Alert facts
-
-**Analytics:**
-- `agg_daily_device_metrics`: Daily device aggregations
-- `agg_customer_summary`: Customer health scorecard
-
-## Running dbt Locally
-
-```bash
-cd databricks/dbt
-
-# Set environment variables
-export DATABRICKS_HOST="your-workspace"
-export DATABRICKS_TOKEN="dapi..."
-export DATABRICKS_HTTP_PATH="/sql/1.0/warehouses/..."
-export DBT_CATALOG="iot_streaming_dev"
-export DBT_ENV_PREFIX="dev"
-
-# Install dependencies
-dbt deps
-
-# Run models
-dbt run
-
-# Run tests
-dbt test
-
-# Generate docs
-dbt docs generate
-dbt docs serve
+### Bronze Layer (Streaming Tables)
+```sql
+CONSTRAINT valid_event_id EXPECT (event_id IS NOT NULL) ON VIOLATION DROP ROW
+CONSTRAINT valid_sensor_type EXPECT (sensor_type IN ('temperature', 'humidity', 'pressure', 'motion'))
 ```
+
+### Silver Layer (Materialized Views)
+- CDC deduplication with ROW_NUMBER()
+- Soft delete handling (_is_deleted flag)
+- Data type casting and validation
+
+### Gold Layer (Materialized Views)
+- Referential integrity via JOINs
+- Business rule validation
+- Calculated health scores
 
 ## CI/CD
 
