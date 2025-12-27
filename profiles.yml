@@ -3,9 +3,10 @@ iot_simulator_datalake:
   outputs:
     dev:
       type: databricks
-      method: http
+      # method: http
+      method: session
       schema: 'bronze'
-      host: 'dbc-6ee8b0d3-4446.cloud.databricks.com'
-      http_path: 'sql/protocolv1/o/7474658012323014/1227-132249-1n6av6du'
-      token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
+      # host: 'dbc-6ee8b0d3-4446.cloud.databricks.com'
+      # http_path: 'sql/protocolv1/o/7474658012323014/1227-132249-1n6av6du'
+      # token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
       threads: 8
