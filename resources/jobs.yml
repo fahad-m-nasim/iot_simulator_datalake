@@ -28,6 +28,7 @@ resources:
           dbt_task:
             commands:
               - 'dbt run'
+              - 'dbt test'
             project_directory: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}/files
           libraries:
             - pypi:
