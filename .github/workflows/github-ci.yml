@@ -7,6 +7,11 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         environment: dev
+        env:
+            DATABRICKS_HOST: ${{ vars.DATABRICKS_IOT_S_DL_HOST }}
+            DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
+            DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_SECRET }}
+            ORG_ID: 7474658012323014
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
@@ -18,10 +23,6 @@ jobs:
             - name: Validate databricks
               run: |
                 databricks bundle validate
-              env:
-                DATABRICKS_HOST: ${{ vars.DATABRICKS_IOT_S_DL_HOST }}
-                DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
-                DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_SECRET }}
 
             - name: Deploy Databricks Job
               run: |
@@ -30,13 +31,15 @@ jobs:
             - name: Set Databricks Cluster HTTP Path
               run: |
                 export CLUSTER_ID =$(databricks bundle summary -t dev --output json | jq -r '.resources.clusters.interactive_cluster_s.id')
-                export HTTP_PATH = "sql/protocolv1/o/<org_id>/${CLUSTER_ID}"
+                export HTTP_PATH = "sql/protocolv1/o/$ORG_ID/$CLUSTER_ID"
                 echo "cluster id found is $CLUSTER_ID"
                 echo "http path found is $HTTP_PATH"
-                sed "s|http_path: '.*'|http_path: \"{{ $HTTP_PATH) }}\"|" profiles.yml
-                sed -i "s|http_path: '.*'|http_path: \"{{ $HTTP_PATH }}\"|" profiles.yml
+                sed "s|http_path: '.*'|http_path: \"$HTTP_PATH\"|" profiles.yml
+                sed -i "s|http_path: '.*'|http_path: \"$HTTP_PATH\"|" profiles.yml
+                databricks bundle deploy -t dev
 
 
             - name: Run Databricks Job
-              run: databricks bundle run -t dev job_iot_simulator_datalake
+              run: databricks run deploy -t dev
+
 
