@@ -4,3 +4,28 @@ models:
   - name: slvr_iot_events
     config:
       materialized: view
+    columns:
+      - name: device_id
+        tests:
+          - not_null
+      - name: location_id
+        tests:
+          - not_null
+      - name: sensor_type
+        tests:
+          - not_null
+          - accepted_values:
+            values:
+              - sensor_type
+              - motion
+              - temperature
+              - pressure
+              - humidity
+      - name: quality_flag
+        tests:
+          - not_null
+          - accepted_values:
+            values:
+              - good
+              - suspect
+

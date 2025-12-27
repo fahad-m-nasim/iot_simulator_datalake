@@ -4,9 +4,19 @@ models:
   - name: dim_locations
     config:
       materialized: table
+    columns:
+      - name: location_id
+        tests:
+          - unique
+          - not_null
   - name: fact_iot_events
     config:
       materialized: table
   - name: dim_date
     config:
       materialized: table
+    columns:
+      - name: date
+        tests:
+          - unique
+          - not_null
