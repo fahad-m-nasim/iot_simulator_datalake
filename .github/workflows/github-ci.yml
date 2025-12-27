@@ -22,7 +22,6 @@ jobs:
                 databricks bundle run -t dev
               env:
                 DATABRICKS_HOST: ${{ vars.DATABRICKS_IOT_S_DL_HOST }}
-                DATABRICKS_USERNAME: 'dev-sp-dbt-iot-simulator-datalake'
                 DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
                 DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_SECRET }}
 
