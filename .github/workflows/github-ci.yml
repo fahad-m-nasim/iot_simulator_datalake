@@ -15,13 +15,28 @@ jobs:
               run: |
                 curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
-            - name: Validate, Deploy and Run Databricks Job
+            - name: Validate databricks
               run: |
                 databricks bundle validate
-                databricks bundle deploy -t dev
-                databricks bundle run -t dev job_iot_simulator_datalake
               env:
                 DATABRICKS_HOST: ${{ vars.DATABRICKS_IOT_S_DL_HOST }}
                 DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
                 DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_SECRET }}
+
+            - name: Deploy Databricks Job
+              run: |
+                databricks bundle deploy -t dev
+
+            - name: Set Databricks Cluster HTTP Path
+              run: |
+                export CLUSTER_ID =$(databricks bundle summary -t dev --output json | jq -r '.resources.clusters.interactive_cluster_s.id')
+                export HTTP_PATH = "sql/protocolv1/o/<org_id>/${CLUSTER_ID}"
+                echo "cluster id found is $CLUSTER_ID"
+                echo "http path found is $HTTP_PATH"
+                sed "s|http_path: '.*'|http_path: \"{{ $HTTP_PATH) }}\"|" profiles.yml
+                sed -i "s|http_path: '.*'|http_path: \"{{ $HTTP_PATH }}\"|" profiles.yml
+
+
+            - name: Run Databricks Job
+              run: databricks bundle run -t dev job_iot_simulator_datalake
 
