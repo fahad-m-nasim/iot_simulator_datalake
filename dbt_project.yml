@@ -3,6 +3,9 @@ name: iot_simulator_datalake
 version: 1.0.0
 profile: iot_simulator_datalake
 
+vars:
+  iot_events_path: '/Volumes/dev_catalog/landing/vol01/iot_events/iot_events/'
+
 models:
   iot_simulator_datalake:
     bronze:
