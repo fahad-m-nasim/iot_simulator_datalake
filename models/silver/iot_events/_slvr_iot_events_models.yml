@@ -15,19 +15,19 @@ models:
         data_tests:
           - not_null
           - accepted_values:
-            arguments:
-              values:
-                - sensor_type
-                - motion
-                - temperature
-                - pressure
-                - humidity
+              arguments:
+                values:
+                  - sensor_type
+                  - motion
+                  - temperature
+                  - pressure
+                  - humidity
       - name: quality_flag
         data_tests:
           - not_null
           - accepted_values:
-            arguments:
-              values:
-                - good
-                - suspect
+              arguments:
+                values:
+                  - good
+                  - suspect
 
