@@ -40,6 +40,6 @@ jobs:
 
 
             - name: Run Databricks Job
-              run: databricks bundle run -t dev
+              run: databricks bundle run -t dev job_iot_simulator_datalake
 
 
