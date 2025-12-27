@@ -10,8 +10,6 @@ resources:
           job_cluster_key: job_cluster
           dbt_task:
             warehouse_id: 1e9ad081dfddd470
-            catalog: dev_catalog
-            schema: bronze
             commands:
               - 'dbt run'
             project_directory: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}/files
