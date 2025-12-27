@@ -1,0 +1,26 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Install Databricks CLI
+              run: |
+                curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+            - name: Validate, Deploy and Run Databricks Job
+              env:
+                DATABRICKS_HOST:${{ vars.DATABRICKS_IOT_S_DL_HOST }}
+                DATABRICKS_CLIENT_ID:${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
+                DATABRICKS_CLIENT_SECRET:${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_SECRET }}
+              run: |
+                databricks bundle validate
+                databricks bundle deploy -t dev
+                databricks bundle run -t dev
+
