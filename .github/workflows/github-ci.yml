@@ -19,7 +19,7 @@ jobs:
               run: |
                 databricks bundle validate
                 databricks bundle deploy -t dev
-                databricks bundle run -t dev
+                databricks bundle run -t dev job_iot_simulator_datalake
               env:
                 DATABRICKS_HOST: ${{ vars.DATABRICKS_IOT_S_DL_HOST }}
                 DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
