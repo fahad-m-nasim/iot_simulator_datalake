@@ -6,7 +6,7 @@ models:
       materialized: table
     columns:
       - name: location_id
-        tests:
+        data_tests:
           - unique
           - not_null
   - name: fact_iot_events
@@ -17,6 +17,6 @@ models:
       materialized: table
     columns:
       - name: date
-        tests:
+        data_tests:
           - unique
           - not_null

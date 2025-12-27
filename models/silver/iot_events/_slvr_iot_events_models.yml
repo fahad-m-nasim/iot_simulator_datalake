@@ -6,13 +6,13 @@ models:
       materialized: view
     columns:
       - name: device_id
-        tests:
+        data_tests:
           - not_null
       - name: location_id
-        tests:
+        data_tests:
           - not_null
       - name: sensor_type
-        tests:
+        data_tests:
           - not_null
           - accepted_values:
             arguments:
@@ -23,7 +23,7 @@ models:
                 - pressure
                 - humidity
       - name: quality_flag
-        tests:
+        data_tests:
           - not_null
           - accepted_values:
             arguments:
