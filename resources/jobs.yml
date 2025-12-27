@@ -9,14 +9,23 @@ resources:
         - task_key: data-pipeline-dbt-task
           job_cluster_key: job_cluster
           dbt_task:
+            warehouse_id: 1e9ad081dfddd470
+            catalog: dev_catalog
+            schema: bronze
             commands:
-              - 'dbt run -t dev'
-            project_directory: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+              - 'dbt run'
+            project_directory: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}/files
           libraries:
             - pypi:
                 package: 'dbt-databricks>=1.0.0,<2.0.0'
       job_clusters:
         - job_cluster_key: job_cluster
           new_cluster:
-              node_type_id: md-fleet.xlarge
-              spark_version: 17.3.x-scala2.13
+            node_type_id: m5d.large
+            spark_version: 17.3.x-scala2.13
+            num_workers: 0
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: "local[*]"
+            custom_tags:
+              ResourceClass: SingleNode

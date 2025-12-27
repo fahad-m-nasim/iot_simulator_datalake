@@ -1,0 +1,10 @@
+iot_simulator_datalake:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      method: http
+      schema: 'bronze'
+      host: 'dbc-6ee8b0d3-4446.cloud.databricks.com'
+      http_path: 'sql/protocolv1/o/7474658012323014/1226-041156-cefvjcb6'
+      token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
