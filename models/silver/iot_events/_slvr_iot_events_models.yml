@@ -15,15 +15,19 @@ models:
         tests:
           - not_null
           - accepted_values:
-            - sensor_type
-            - motion
-            - temperature
-            - pressure
-            - humidity
+            arguments:
+              values:
+                - sensor_type
+                - motion
+                - temperature
+                - pressure
+                - humidity
       - name: quality_flag
         tests:
           - not_null
           - accepted_values:
-            - good
-            - suspect
+            arguments:
+              values:
+                - good
+                - suspect
 
