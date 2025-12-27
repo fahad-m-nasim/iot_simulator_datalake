@@ -12,3 +12,4 @@ __pycache__/
 scratch/**
 !scratch/README.md
 dbt_internal_packages/
+logs/

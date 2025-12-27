@@ -2,28 +2,33 @@
 # The main job for {{.project_name}}
 
 resources:
+  clusters:
+    interactive_cluster_s:
+      num_workers: 0
+      cluster_name: 'Interactive Cluster S'
+      node_type_id: 'md-fleet.xlarge'
+      spark_version: '17.3.x-scala2.13'
+      autotermination_minutes: 60
+      enable_elastic_disk: true
+      single_user_name: ${workspace.current_user.userName}
+      enable_local_disk_encryption: false
+      data_security_mode: SINGLE_USER
+      runtime_engine: STANDARD
+      spark_conf:
+        spark.databricks.cluster.profile: singleNode
+        spark.master: local[*]
+      custom_tags:
+        ResourceClass: SingleNode
   jobs:
     job_iot_simulator_datalake:
       name: job_iot_simulator_datalake
       tasks:
         - task_key: data-pipeline-dbt-task
-          job_cluster_key: job_cluster
+          existing_cluster_id: ${resources.clusters.interactive_cluster_s.id}
           dbt_task:
-            warehouse_id: 1e9ad081dfddd470
             commands:
               - 'dbt run'
             project_directory: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}/files
           libraries:
             - pypi:
                 package: 'dbt-databricks>=1.0.0,<2.0.0'
-      job_clusters:
-        - job_cluster_key: job_cluster
-          new_cluster:
-            node_type_id: md-fleet.xlarge
-            spark_version: 17.3.x-scala2.13
-            num_workers: 0
-            spark_conf:
-              spark.databricks.cluster.profile: singleNode
-              spark.master: "local[*]"
-            custom_tags:
-              ResourceClass: SingleNode
