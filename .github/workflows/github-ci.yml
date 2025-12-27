@@ -15,12 +15,12 @@ jobs:
                 curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
             - name: Validate, Deploy and Run Databricks Job
-              env:
-                DATABRICKS_HOST:${{ vars.DATABRICKS_IOT_S_DL_HOST }}
-                DATABRICKS_CLIENT_ID:${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
-                DATABRICKS_CLIENT_SECRET:${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_SECRET }}
               run: |
                 databricks bundle validate
                 databricks bundle deploy -t dev
                 databricks bundle run -t dev
+              env:
+                DATABRICKS_HOST: ${{ vars.DATABRICKS_IOT_S_DL_HOST }}
+                DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_ID }}
+                DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_IOT_S_DL_SP_OAUTH_CLIENT_SECRET }}
 
