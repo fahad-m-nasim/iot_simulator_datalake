@@ -10,4 +10,5 @@ select
     , unit
     , value
 from src_iot_events
+where lower(trim(quality_flag)) in ('good', 'suspect')
 ;
