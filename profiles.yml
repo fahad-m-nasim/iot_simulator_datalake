@@ -9,6 +9,6 @@ iot_simulator_datalake:
       schema: bronze
       host: 'dbc-6ee8b0d3-4446.cloud.databricks.com'
       # SQL Warehouse required for streaming tables (powered by DLT serverless pipelines)
-      http_path: '/sql/1.0/warehouses/1e9ad081dfddd470'
+      http_path: 'sql/protocolv1/o/7474658012323014/1227-212832-0sdl91jm'
       token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
       threads: 8
