@@ -1,9 +1,14 @@
-{{ config(meta = {
-    'target_schema':'silver'
-}) }}
+{{ config(
+    materialized='streaming_table',
+    meta = {
+        'target_schema': 'silver'
+    }
+) }}
 
+-- Streaming table: incrementally processes changes from bronze
+-- Powered by Delta Live Tables (DLT) serverless pipeline behind the scenes
 with src_iot_events as (
-   select * from {{ ref('bronze_iot_events') }}
+   select * from STREAM({{ ref('bronze_iot_events') }})
 )
 select
     device_id

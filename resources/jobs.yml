@@ -26,6 +26,7 @@ resources:
         - task_key: data-pipeline-dbt-task
           existing_cluster_id: ${resources.clusters.interactive_cluster_s.id}
           dbt_task:
+            # SQL Warehouse required for streaming tables (powered by DLT)
             # warehouse_id: 1e9ad081dfddd470
             commands:
               - 'dbt run'
