@@ -1,6 +1,7 @@
-{{ config(
-      target_schema="bronze"
-) }}
+{{ config(meta = {
+    'target_schema':'bronze'
+}) }}
+
 
 select
     *

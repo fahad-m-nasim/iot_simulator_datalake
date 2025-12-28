@@ -1,6 +1,7 @@
-{{ config(
-      target_schema="gold"
-) }}
+{{ config(meta = {
+    'target_schema':'gold'
+}) }}
+
 
 with iot_events as (
    select * from {{ ref('silver_iot_events') }}
