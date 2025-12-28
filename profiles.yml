@@ -5,7 +5,8 @@ iot_simulator_datalake:
       type: databricks
       method: http
       # method: session
-      schema: 'bronze'
+      catalog: dev_catalog
+      schema: bronze
       host: 'dbc-6ee8b0d3-4446.cloud.databricks.com'
       http_path: 'sql/protocolv1/o/7474658012323014/${resources.clusters.interactive_cluster_s.id}'
       token: "{{ env_var('DBT_ACCESS_TOKEN') }}"

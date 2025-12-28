@@ -10,7 +10,11 @@ models:
   iot_simulator_datalake:
     bronze:
       +materialized: view
+      +schema: bronze
     silver:
       +materialized: view
+      +schema: silver
     gold:
       +materialized: table
+      +schema: gold
+
