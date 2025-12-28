@@ -1,5 +1,9 @@
+{{ config(
+      target_schema="silver"
+) }}
+
 with src_iot_events as (
-   select * from {{ ref('brnz_ingest_iot_events') }}
+   select * from {{ ref('bronze_iot_events') }}
 )
 select
     device_id

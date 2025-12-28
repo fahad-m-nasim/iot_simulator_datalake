@@ -1,5 +1,9 @@
+{{ config(
+      target_schema="gold"
+) }}
+
 with iot_events as (
-   select * from {{ ref('slvr_iot_events') }}
+   select * from {{ ref('silver_iot_events') }}
 )
 select
     distinct

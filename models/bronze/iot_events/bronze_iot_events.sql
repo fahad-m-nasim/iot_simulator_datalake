@@ -1,3 +1,7 @@
+{{ config(
+      target_schema="bronze"
+) }}
+
 select
     *
 from read_files(
