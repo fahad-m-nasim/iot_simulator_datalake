@@ -13,3 +13,25 @@ GRANT CREATE TABLE ON SCHEMA dev_catalog.gold TO `a1126402-7cc5-4067-99be-feb57b
 
 -- For reading from volumes
 GRANT READ VOLUME ON VOLUME dev_catalog.landing.vol01 TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
+
+
+
+
+
+
+-- Grant schema creation permission
+GRANT CREATE SCHEMA ON CATALOG dev_catalog TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
+
+-- Grant USE CATALOG 
+GRANT USE CATALOG ON CATALOG dev_catalog TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
+
+-- Grant permissions on existing schemas
+GRANT USE SCHEMA, CREATE TABLE, MODIFY, SELECT ON SCHEMA dev_catalog.bronze TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
+GRANT USE SCHEMA, CREATE TABLE, MODIFY, SELECT ON SCHEMA dev_catalog.silver TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
+GRANT USE SCHEMA, CREATE TABLE, MODIFY, SELECT ON SCHEMA dev_catalog.gold TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
+
+-- For reading source data from volumes
+GRANT READ VOLUME ON VOLUME dev_catalog.landing.vol01 TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
+
+SHOW GRANTS ON CATALOG dev_catalog;
+SHOW GRANTS TO `a1126402-7cc5-4067-99be-feb57b1d2b7c`;
